@@ -1,3 +1,27 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: igw-gateway
+  cloud:
+    gateway:
+      # Phase 0: a single route proxies everything to the legacy upstream.
+      # The canary config in igw.edge.canary.* is honored by the weighted
+      # route resolver added in PR #11.
+      routes:
+        - id: ${igw.edge.route-id:echo-server}
+          uri: ${igw.edge.upstream:http://localhost:8081}
+          predicates:
+            - Path=/**
+
+igw:
+  edge:
+    upstream: http://localhost:8081
+    route-id: echo-server
+    connect-timeout: 1s
+    read-timeout: 5s
+    canary:
+      # 0 = 100% legacy (Phase 0). 100 = 100% new (post PR #11).
+      weight-new: 0
+      new-uri: ""
