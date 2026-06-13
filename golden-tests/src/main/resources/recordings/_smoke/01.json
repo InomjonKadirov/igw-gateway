@@ -1,0 +1,18 @@
+{
+  "id": "_smoke.01",
+  "request": {
+    "method": "GET",
+    "path": "/test/path",
+    "headers": {
+      "X-Custom-Header": "value-1"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "application/json"
+    },
+    "body": "{\"method\":\"GET\",\"path\":\"/test/path\",\"query\":null,\"headers\":{\"X-Custom-Header\":\"value-1\"}}"
+  }
+}
