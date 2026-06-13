@@ -1,0 +1,78 @@
+# Local development stack for igw-edge.
+#
+# Usage:
+#   docker compose -f local/dc.yml up
+#
+# Brings up the four runtime dependencies Phase 0+ needs:
+#   - postgres:   audit-spring-boot-starter (request table)
+#   - redis:      token-cache-spring-boot-starter (cache-aside tokens)
+#   - keycloak:   igw-edge JWT validation (JWKS source)
+#   - wiremock:   (Phase 0 placeholder; per-provider mocks land in PR #13+)
+#
+# Phase 0 default: no encryption, no persistent volumes. Tear down with
+# `docker compose -f local/dc.yml down -v` for a clean slate.
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: igw-postgres
+    environment:
+      POSTGRES_USER: igw
+      POSTGRES_PASSWORD: igw
+      POSTGRES_DB: igw
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U igw -d igw"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: igw-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - redis-data:/data
+
+  keycloak:
+    # Phase 0: Keycloak 25 in dev mode. Phase 1+ will add an `igw` realm with
+    # a banking-scope client; the gateway's `jwk-set-uri` points at the realm's
+    # OIDC certs endpoint.
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: igw-keycloak
+    command: ["start-dev"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080 && echo -e 'GET /realms/master HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' | grep -q '200 OK'"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  wiremock:
+    # Reserved for Phase 1+ per-provider mocks (paynet, katm-myid, etc.).
+    # Phase 0 ships the image so the stack is stable; no recorded stubs yet.
+    image: wiremock/wiremock:3.10.0
+    container_name: igw-wiremock
+    command: ["--verbose", "--disable-banner"]
+    ports:
+      - "8088:8080"
+    volumes:
+      - ./wiremock:/home/wiremock
+
+volumes:
+  postgres-data:
+  redis-data:
