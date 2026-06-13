@@ -51,4 +51,13 @@ public class CrossCuttingFiltersConfig {
         reg.addUrlPatterns("/*");
         return reg;
     }
+
+    @Bean
+    public FilterRegistrationBean<CanaryRoutingFilter> canaryRoutingFilterRegistration(
+            CanaryRoutingFilter filter) {
+        FilterRegistrationBean<CanaryRoutingFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setOrder(50);
+        reg.addUrlPatterns("/*");
+        return reg;
+    }
 }

@@ -15,25 +15,37 @@ spring:
           jwk-set-uri: ${IGW_JWT_JWKS_URI:http://localhost:8080/realms/igw/protocol/openid-connect/certs}
   cloud:
     gateway:
-      # Phase 0: a single route proxies everything to the legacy upstream.
-      # The canary config in igw.edge.canary.* is honored by the weighted
-      # route resolver added in PR #11.
+      # Phase 0: two routes split by canary weight.
+      # - "legacy" (default): matches everything that DOES NOT carry X-Canary: new
+      # - "new":             matches only requests that DO carry X-Canary: new
+      #
+      # CanaryRoutingFilter (filter order 50) sets the header based on
+      # igw.edge.canary.weight-new (0..100). When weight=0, no requests get
+      # the header and 100% of traffic flows to the legacy upstream.
       routes:
-        - id: ${igw.edge.route-id:echo-server}
+        - id: ${igw.edge.canary.route-id-legacy:legacy}
           uri: ${igw.edge.upstream:http://localhost:8081}
           predicates:
             - Path=/**
+            - "!Header=X-Canary, new"
+        - id: ${igw.edge.canary.route-id-new:new}
+          uri: ${igw.edge.canary.new-uri:http://localhost:8082}
+          predicates:
+            - Path=/**
+            - Header=X-Canary, new
 
 igw:
   edge:
     upstream: http://localhost:8081
-    route-id: echo-server
+    route-id: legacy
     connect-timeout: 1s
     read-timeout: 5s
     canary:
       # 0 = 100% legacy (Phase 0). 100 = 100% new (post PR #11).
       weight-new: 0
       new-uri: ""
+      route-id-legacy: legacy
+      route-id-new: new
     security:
       ip-check:
         # Phase 0 default: false. The cache is empty; enabling the check

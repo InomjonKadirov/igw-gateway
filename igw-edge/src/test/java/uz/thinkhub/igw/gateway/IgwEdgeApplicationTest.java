@@ -34,7 +34,8 @@ class IgwEdgeApplicationTest {
     void igwEdgePropertiesAreBound() {
         IgwEdgeProperties props = context.getBean(IgwEdgeProperties.class);
         assertThat(props.getUpstream()).isEqualTo("http://localhost:8081");
-        assertThat(props.getRouteId()).isEqualTo("echo-server");
+        assertThat(props.getCanary().getRouteIdLegacy()).isEqualTo("legacy");
+        assertThat(props.getCanary().getRouteIdNew()).isEqualTo("new");
         assertThat(props.getCanary().getWeightNew()).isZero();
         assertThat(props.getCanary().getNewUri()).isEmpty();
     }

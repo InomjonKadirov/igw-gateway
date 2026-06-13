@@ -74,6 +74,8 @@ public class IgwEdgeProperties {
     public static class Canary {
         private int weightNew = 0;
         private String newUri = "";
+        private String routeIdLegacy = "legacy";
+        private String routeIdNew = "new";
 
         public int getWeightNew() {
             return weightNew;
@@ -89,6 +91,22 @@ public class IgwEdgeProperties {
 
         public void setNewUri(String newUri) {
             this.newUri = newUri;
+        }
+
+        public String getRouteIdLegacy() {
+            return routeIdLegacy;
+        }
+
+        public void setRouteIdLegacy(String routeIdLegacy) {
+            this.routeIdLegacy = routeIdLegacy;
+        }
+
+        public String getRouteIdNew() {
+            return routeIdNew;
+        }
+
+        public void setRouteIdNew(String routeIdNew) {
+            this.routeIdNew = routeIdNew;
         }
     }
 
