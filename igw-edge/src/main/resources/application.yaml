@@ -4,6 +4,15 @@ server:
 spring:
   application:
     name: igw-gateway
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Phase 0: placeholder URI. Real Keycloak is set up in a later phase
+          # (PR #12 brings the local docker-compose stack). The
+          # NimbusJwtDecoder caches the JWKS (default 5-minute refresh) so a
+          # slow / down JWKS endpoint doesn't fail every request.
+          jwk-set-uri: ${IGW_JWT_JWKS_URI:http://localhost:8080/realms/igw/protocol/openid-connect/certs}
   cloud:
     gateway:
       # Phase 0: a single route proxies everything to the legacy upstream.
