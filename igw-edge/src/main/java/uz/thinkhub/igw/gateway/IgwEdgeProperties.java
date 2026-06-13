@@ -4,25 +4,6 @@ import java.time.Duration;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-/**
- * Configuration for igw-edge.
- *
- * <p>Phase 0 keys:
- * <ul>
- *   <li>{@code igw.edge.upstream} — legacy PHP upstream URL (the
- *       strangler-fig default target; 100% of traffic goes here until
- *       PR #11 introduces canary routing).</li>
- *   <li>{@code igw.edge.canary.weight-new} — 0..100 weight for the new
- *       Java implementation. {@code 0} = 100% legacy (Phase 0 default).
- *       Wired in PR #11.</li>
- *   <li>{@code igw.edge.canary.new-uri} — base URL of the new Java
- *       implementation. Empty in Phase 0.</li>
- *   <li>{@code igw.edge.route-id} — id of the primary route (the legacy
- *       echo-server / PHP upstream).</li>
- *   <li>{@code igw.edge.connect-timeout} / {@code read-timeout} — HTTP
- *       timeouts for upstream calls. Default 1s / 5s.</li>
- * </ul>
- */
 @ConfigurationProperties(prefix = "igw.edge")
 public class IgwEdgeProperties {
 
@@ -31,6 +12,8 @@ public class IgwEdgeProperties {
     private Duration connectTimeout = Duration.ofSeconds(1);
     private Duration readTimeout = Duration.ofSeconds(5);
     private Canary canary = new Canary();
+    private Security security = new Security();
+    private RateLimit rateLimit = new RateLimit();
 
     public String getUpstream() {
         return upstream;
@@ -72,10 +55,24 @@ public class IgwEdgeProperties {
         this.canary = canary;
     }
 
+    public Security getSecurity() {
+        return security;
+    }
+
+    public void setSecurity(Security security) {
+        this.security = security;
+    }
+
+    public RateLimit getRateLimit() {
+        return rateLimit;
+    }
+
+    public void setRateLimit(RateLimit rateLimit) {
+        this.rateLimit = rateLimit;
+    }
+
     public static class Canary {
-        /** 0..100 weight for the new implementation. 0 = 100% legacy. */
         private int weightNew = 0;
-        /** Base URL of the new implementation. Empty in Phase 0. */
         private String newUri = "";
 
         public int getWeightNew() {
@@ -92,6 +89,58 @@ public class IgwEdgeProperties {
 
         public void setNewUri(String newUri) {
             this.newUri = newUri;
+        }
+    }
+
+    public static class Security {
+        private IpCheck ipCheck = new IpCheck();
+
+        public IpCheck getIpCheck() {
+            return ipCheck;
+        }
+
+        public void setIpCheck(IpCheck ipCheck) {
+            this.ipCheck = ipCheck;
+        }
+    }
+
+    public static class IpCheck {
+        /**
+         * Phase 0 default: false. The cache is empty, so enabling the
+         * check would always 403. Enable once the cache is populated
+         * (typically by the user-profile sync job in a follow-up).
+         */
+        private boolean enabled = false;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+    }
+
+    public static class RateLimit {
+        /** Refill rate, tokens per second. Default 100. */
+        private int rps = 100;
+        /** Maximum burst size. Default 200. */
+        private int burst = 200;
+
+        public int getRps() {
+            return rps;
+        }
+
+        public void setRps(int rps) {
+            this.rps = rps;
+        }
+
+        public int getBurst() {
+            return burst;
+        }
+
+        public void setBurst(int burst) {
+            this.burst = burst;
         }
     }
 }

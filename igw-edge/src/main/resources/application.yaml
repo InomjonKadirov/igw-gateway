@@ -34,3 +34,12 @@ igw:
       # 0 = 100% legacy (Phase 0). 100 = 100% new (post PR #11).
       weight-new: 0
       new-uri: ""
+    security:
+      ip-check:
+        # Phase 0 default: false. The cache is empty; enabling the check
+        # would 403 every request. Enable once the cache is populated.
+        enabled: false
+    rate-limit:
+      # Per-user token bucket (Bucket4j). refill=rps tokens/second, capacity=burst.
+      rps: 100
+      burst: 200
