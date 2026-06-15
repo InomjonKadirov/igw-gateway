@@ -73,6 +73,25 @@ services:
     volumes:
       - ./wiremock:/home/wiremock
 
+  k6:
+    # Phase 0 stress probe (PR #14). Runs the smoke script against
+    # igw-edge (which must be on the host network or proxied to the
+    # host's :8080) and asserts byte parity against echo-server. The
+    # smoke is a saturation probe, not a regression gate — see
+    # local/k6/README.md for what it does and does not prove.
+    #
+    # The script is the source of truth. To re-run it after a code
+    # change, edit local/k6/smoke.js and `docker compose -f local/dc.yml
+    # up k6` again; the image entrypoint is one-shot, not a watcher.
+    image: grafana/k6:0.50.0
+    container_name: igw-k6
+    command: ["run", "/scripts/smoke.js"]
+    depends_on:
+      - keycloak   # 8080 is the host port mapping; the smoke targets it
+    volumes:
+      - ./k6:/scripts:ro
+    network_mode: host
+
 volumes:
   postgres-data:
   redis-data:

@@ -1,0 +1,23 @@
+# Local dev profile. Activate with -Dspring.profiles.active=local.
+#
+# Used by humans running igw-edge for local debugging and by the
+# ./gradlew k6Smoke task for the byte-diff smoke. When this profile is
+# active:
+#   - SecurityConfig installs a wide-open filter chain
+#     (SecurityConfig#localPermissiveFilterChain, @Profile("local")),
+#     so you do not need a JWT to hit the gateway.
+#   - The Spring Boot OAuth2 resource-server autoconfig still tries to
+#     build a NimbusJwtDecoder, which requires a non-empty jwk-set-uri.
+#     We point it at a real Keycloak stand when one is running locally;
+#     if not, the autoconfig fails fast at boot, but the wide-open chain
+#     bean is still in the context. (See SecurityConfig for the matching
+#     @Profile("!local") gate that creates the JWT chain in production.)
+#
+# Adjust IGW_JWT_JWKS_URI to match your local Keycloak. The placeholder
+# below is the same default used in application.yaml.
+spring:
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${IGW_JWT_JWKS_URI:http://localhost:8080/realms/igw/protocol/openid-connect/certs}

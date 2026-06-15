@@ -38,3 +38,8 @@ out/
 
 ### Agent runtime ###
 .qwen/
+
+### k6 smoke (PR #14) ###
+# Reports and bin snapshots from ./gradlew k6Smoke. The scripts and
+# fixtures are source-controlled; only the run output is ephemeral.
+local/k6/reports/

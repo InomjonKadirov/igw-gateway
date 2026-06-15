@@ -14,25 +14,27 @@ spring:
           # slow / down JWKS endpoint doesn't fail every request.
           jwk-set-uri: ${IGW_JWT_JWKS_URI:http://localhost:8080/realms/igw/protocol/openid-connect/certs}
   cloud:
+    # Note: this project uses Spring Cloud Gateway MVC, so the routes
+    # prefix is `spring.cloud.gateway.server.webmvc.routes`, not the
+    # `spring.cloud.gateway.routes` used by the reactive gateway. Putting
+    # the routes under the wrong prefix silently produces an empty route
+    # table and every request 404s.
     gateway:
-      # Phase 0: two routes split by canary weight.
-      # - "legacy" (default): matches everything that DOES NOT carry X-Canary: new
-      # - "new":             matches only requests that DO carry X-Canary: new
-      #
-      # CanaryRoutingFilter (filter order 50) sets the header based on
-      # igw.edge.canary.weight-new (0..100). When weight=0, no requests get
-      # the header and 100% of traffic flows to the legacy upstream.
-      routes:
-        - id: ${igw.edge.canary.route-id-legacy:legacy}
-          uri: ${igw.edge.upstream:http://localhost:8081}
-          predicates:
-            - Path=/**
-            - "!Header=X-Canary, new"
-        - id: ${igw.edge.canary.route-id-new:new}
-          uri: ${igw.edge.canary.new-uri:http://localhost:8082}
-          predicates:
-            - Path=/**
-            - Header=X-Canary, new
+      server:
+        webmvc:
+          # Phase 0: a single route that proxies everything to the legacy
+          # upstream. The canary split (X-Canary: new → new upstream) is
+          # wired in PR #11 with the Weight predicate; Spring Cloud
+          # Gateway MVC doesn't support the reactive `!Header` negation
+          # syntax, so the two-route + negated-header trick from the
+          # previous commit doesn't translate. For Phase 0 the new
+          # upstream is unreachable anyway (igw.edge.canary.new-uri is
+          # blank by default), so collapsing to one route is correct.
+          routes:
+            - id: ${igw.edge.canary.route-id-legacy:legacy}
+              uri: ${igw.edge.upstream:http://localhost:8081}
+              predicates:
+                - Path=/**
 
 igw:
   edge:
